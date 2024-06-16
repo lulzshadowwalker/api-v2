@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\V1;
 
-use App\Http\Resources\UserResource;
+use App\Http\Resources\AuthorResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -35,11 +35,11 @@ class TicketResource extends JsonResource
                         'id' => $this->user_id
                     ],
                     'links' => [
-                        'self' => route('api.v1.users.show', ['user' => $this->user_id])
+                        'self' => route('api.v1.authors.show', ['author' => $this->user_id])
                     ]
                 ]
             ],
-            'includes' => new UserResource($this->whenLoaded('user')),
+            'includes' => new AuthorResource($this->whenLoaded('author')),
         ];
     }
 }

@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\ApiController;
+use App\Http\Filters\V1\AuthorFilter;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
-use App\Http\Resources\UserResource;
+use App\Http\Resources\AuthorResource;
 use App\Models\User;
 
-class UserController extends Controller
+class AuthorController extends ApiController
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(AuthorFilter $filters)
     {
-        return UserResource::collection(User::paginate());
+        return AuthorResource::collection(User::filter($filters)->paginate());
     }
 
     /**
@@ -29,9 +30,13 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(User $user)
+    public function show(User $author)
     {
-        return new UserResource($user);
+        if ($this->include('tickets')) {
+            return new AuthorResource($author->load('tickets'));
+        }
+
+        return new AuthorResource($author);
     }
 
     /**

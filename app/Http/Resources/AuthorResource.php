@@ -6,7 +6,7 @@ use App\Http\Resources\V1\TicketResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UserResource extends JsonResource
+class AuthorResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,7 +16,7 @@ class UserResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'type' => 'user',
+            'type' => 'author',
             'id' => $this->id,
             'attributes' => [
                 'name' => $this->name,
@@ -29,7 +29,7 @@ class UserResource extends JsonResource
             ],
             'includes' => TicketResource::collection($this->whenLoaded('tickets')),
             'links' => [
-                'self' => route('api.v1.users.show', ['user' => $this->id])
+                'self' => route('api.v1.authors.show', ['author' => $this->id])
             ]
         ];
     }
