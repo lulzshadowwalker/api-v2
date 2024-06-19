@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\ApiResponses;
 use App\Http\Filters\V1\TicketFilter;
+use App\Http\Requests\V1\ReplaceTicketRequest;
 use App\Http\Requests\V1\StoreTicketRequest;
+use App\Http\Requests\V1\UpdateTicketRequest;
 use App\Http\Resources\V1\TicketResource;
 use App\Models\Ticket;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -41,6 +43,41 @@ class AuthorTicketController extends Controller
         try {
             // TODO: Authorization
             Ticket::findOrFail($ticketId)->delete();
+        } catch (ModelNotFoundException $e) {
+            return $this->notFound("Ticket with id $ticketId not found");
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateTicketRequest $request, $authorId, $ticketId)
+    {
+        try {
+            $ticket = Ticket::findOrFail($ticketId);
+            if ($ticket->user_id != $authorId) {
+                // TODO: Proper Authorization
+                return $this->unauthorized();
+            }
+
+            $ticket->update($request->mappedAttributes());
+            return TicketResource::make($ticket);
+        } catch (ModelNotFoundException $e) {
+            return $this->notFound("Ticket with id $ticketId not found");
+        }
+    }
+
+    public function replace(ReplaceTicketRequest $request, $authorId, $ticketId)
+    {
+        try {
+            $ticket = Ticket::findOrFail($ticketId);
+            if ($ticket->user_id != $authorId) {
+                // TODO: Proper Authorization
+                return $this->unauthorized();
+            }
+
+            $ticket->update($request->mappedAttributes());
+            return TicketResource::make($ticket);
         } catch (ModelNotFoundException $e) {
             return $this->notFound("Ticket with id $ticketId not found");
         }

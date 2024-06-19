@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\V1;
 
-class UpdateTicketRequest extends BaseTicketRequest
+class ReplaceTicketRequest extends BaseTicketRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -19,11 +19,11 @@ class UpdateTicketRequest extends BaseTicketRequest
      */
     public function rules(): array
     {
-        return [
-            'data.attributes.title' => 'sometimes|string',
-            'data.attributes.description' => 'sometimes|string',
-            'data.attributes.status' => 'sometimes|string|in:OPEN,CLOSED',
-            'data.relationships.author.data.id' => 'sometimes|exists:users,id',
+        return  [
+            'data.attributes.title' => 'required|string',
+            'data.attributes.description' => 'required|string',
+            'data.attributes.status' => 'required|string|in:OPEN,CLOSED',
+            'data.relationships.author.data.id' => 'required|exists:users,id',
         ];
     }
 }

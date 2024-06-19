@@ -32,4 +32,9 @@ trait ApiResponses
             'status' => $statusCode
         ], $statusCode);
     }
+
+    public function unauthorized()
+    {
+        return $this->error('Unauthorized', Response::HTTP_UNAUTHORIZED);
+    }
 }

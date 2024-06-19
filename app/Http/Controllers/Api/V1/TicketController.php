@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Api\V1;
 use App\ApiResponses;
 use App\Http\Controllers\ApiController;
 use App\Http\Filters\V1\TicketFilter;
+use App\Http\Requests\V1\ReplaceTicketRequest;
 use App\Http\Requests\V1\StoreTicketRequest as V1StoreTicketRequest;
 use App\Http\Requests\V1\UpdateTicketRequest as V1UpdateTicketRequest;
 use App\Http\Resources\V1\TicketResource;
 use App\Models\Ticket;
-use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class TicketController extends ApiController
@@ -55,13 +55,26 @@ class TicketController extends ApiController
     /**
      * Update the specified resource in storage.
      */
-    public function update(V1UpdateTicketRequest $request, Ticket $ticket)
+    public function update(V1UpdateTicketRequest $request, $ticketId)
     {
-        //
+        try {
+            $ticket = Ticket::findOrFail($ticketId);
+            $ticket->update($request->mappedAttributes());
+            return TicketResource::make($ticket);
+        } catch (ModelNotFoundException $e) {
+            return $this->notFound("Ticket with id $ticketId not found");
+        }
     }
 
-    public function replace()
+    public function replace(ReplaceTicketRequest $request, $ticketId)
     {
+        try {
+            $ticket = Ticket::findOrFail($ticketId);
+            $ticket->update($request->mappedAttributes());
+            return TicketResource::make($ticket);
+        } catch (ModelNotFoundException $e) {
+            return $this->notFound("Ticket with id $ticketId not found");
+        }
     }
 
     /**
@@ -71,6 +84,7 @@ class TicketController extends ApiController
     {
         try {
             Ticket::findOrFail($ticketId)->delete();
+            return $this->ok("Ticket with id $ticketId has been deleted");
         } catch (ModelNotFoundException $e) {
             return $this->notFound("Ticket with id $ticketId not found");
         }
