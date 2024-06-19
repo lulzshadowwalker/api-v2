@@ -11,6 +11,11 @@ trait ApiResponses
         return $this->success($message, $data, Response::HTTP_OK);
     }
 
+    protected function notFound($message)
+    {
+        return $this->error($message, Response::HTTP_NOT_FOUND);
+    }
+
     protected function success($message, $data = [], $statusCode = Response::HTTP_OK)
     {
         return response()->json([

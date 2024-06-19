@@ -15,6 +15,13 @@ class Ticket extends Model
     const STATUS_OPEN = 'OPEN';
     const STATUS_CLOSED = 'CLOSED';
 
+    protected $fillable = [
+        'title',
+        'description',
+        'status',
+        'user_id',
+    ];
+
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, "user_id");

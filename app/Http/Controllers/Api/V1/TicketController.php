@@ -9,6 +9,8 @@ use App\Http\Requests\V1\StoreTicketRequest as V1StoreTicketRequest;
 use App\Http\Requests\V1\UpdateTicketRequest as V1UpdateTicketRequest;
 use App\Http\Resources\V1\TicketResource;
 use App\Models\Ticket;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class TicketController extends ApiController
 {
@@ -27,7 +29,15 @@ class TicketController extends ApiController
      */
     public function store(V1StoreTicketRequest $request)
     {
-        //
+        $model = [
+            'title' => $request->input('data.attributes.title'),
+            'description' => $request->input('data.attributes.description'),
+            'status' => $request->input('data.attributes.status'),
+            'user_id' => $request->input('data.relationships.author.data.id'),
+        ];
+
+        $ticket = Ticket::create($model)->load('author');
+        return TicketResource::make($ticket);
     }
 
     /**
@@ -50,11 +60,19 @@ class TicketController extends ApiController
         //
     }
 
+    public function replace()
+    {
+    }
+
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Ticket $ticket)
+    public function destroy($ticketId)
     {
-        //
+        try {
+            Ticket::findOrFail($ticketId)->delete();
+        } catch (ModelNotFoundException $e) {
+            return $this->notFound("Ticket with id $ticketId not found");
+        }
     }
 }

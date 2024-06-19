@@ -21,8 +21,23 @@ class StoreTicketRequest extends FormRequest
      */
     public function rules(): array
     {
+        $rules =  [
+            'data.attributes.title' => 'required|string',
+            'data.attributes.description' => 'required|string',
+            'data.attributes.status' => 'required|string|in:OPEN,CLOSED',
+        ];
+
+        if (request()->routeIs('api.v1.tickets.store')) {
+            $rules['data.relationships.author.data.id'] = 'required|exists:users,id';
+        }
+
+        return $rules;
+    }
+
+    public function messages(): array
+    {
         return [
-            //
+            'data.attributes.status' => 'The status field must be either OPEN or CLOSED.'
         ];
     }
 }
