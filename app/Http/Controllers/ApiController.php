@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Policies\V1\TicketPolicy;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Foundation\Validation\ValidatesRequests;
 
 class ApiController extends Controller
 {
-    protected $policyClass = TicketPolicy::class;
+    use AuthorizesRequests, ValidatesRequests;
+
+    protected $policyClass;
 
     protected function include(string $relationship): bool
     {

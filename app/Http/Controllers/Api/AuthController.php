@@ -6,8 +6,8 @@ use App\ApiResponses;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
 use App\Models\User;
-use Exception;
-use Illuminate\Http\Client\Request;
+use App\Permissions\V1\Abilities;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
@@ -29,16 +29,11 @@ class AuthController extends Controller
             [
                 'token' => $user->createToken(
                     "API Token for {$user->email}",
-                    ['*'],
+                    Abilities::getAbilities($user),
                     now()->addMonth(),
                 )->plainTextToken
             ]
         );
-    }
-
-    public function register()
-    {
-        throw new Exception('Not implemented');
     }
 
     public function logout(Request $request)

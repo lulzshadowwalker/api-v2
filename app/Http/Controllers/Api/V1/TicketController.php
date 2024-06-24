@@ -10,12 +10,14 @@ use App\Http\Requests\V1\StoreTicketRequest as V1StoreTicketRequest;
 use App\Http\Requests\V1\UpdateTicketRequest as V1UpdateTicketRequest;
 use App\Http\Resources\V1\TicketResource;
 use App\Models\Ticket;
+use App\Policies\V1\TicketPolicy;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class TicketController extends ApiController
 {
     use ApiResponses;
+
+    protected $policyClass = TicketPolicy::class;
 
     /**
      * Display a listing of the resource.
@@ -30,22 +32,17 @@ class TicketController extends ApiController
      */
     public function store(V1StoreTicketRequest $request)
     {
-        $model = [
-            'title' => $request->input('data.attributes.title'),
-            'description' => $request->input('data.attributes.description'),
-            'status' => $request->input('data.attributes.status'),
-            'user_id' => $request->input('data.relationships.author.data.id'),
-        ];
-
-        $ticket = Ticket::create($model)->load('author');
+        $this->isAble('create', Ticket::class);
+        $ticket = Ticket::create($request->mappedAttributes())->load('author');
         return TicketResource::make($ticket);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Ticket $ticket)
+    public function show($ticketId)
     {
+        $ticket = Ticket::find($ticketId);
         if ($this->include('author')) {
             return new TicketResource($ticket->load('user'));
         }
@@ -56,32 +53,23 @@ class TicketController extends ApiController
     /**
      * Update the specified resource in storage.
      */
-    public function update(V1UpdateTicketRequest $request, $ticketId)
+    public function update(V1UpdateTicketRequest $request, Ticket $ticket)
     {
         try {
-            $ticket = Ticket::findOrFail($ticketId);
-
             $this->isAble('update', $ticket);
-
-
             $ticket->update($request->mappedAttributes());
             return TicketResource::make($ticket);
-        } catch (ModelNotFoundException $e) {
-            return $this->notFound("Ticket with id $ticketId not found");
-        } catch (AuthorizationException $e) {
+        }  catch (AuthorizationException $e) {
             return $this->unauthorized('You are not authorized to update that resource');
         }
     }
 
     public function replace(ReplaceTicketRequest $request, $ticketId)
     {
-        try {
-            $ticket = Ticket::findOrFail($ticketId);
-            $ticket->update($request->mappedAttributes());
-            return TicketResource::make($ticket);
-        } catch (ModelNotFoundException $e) {
-            return $this->notFound("Ticket with id $ticketId not found");
-        }
+        $ticket = Ticket::find($ticketId);
+        $this->isAble('replace', $ticket);
+        $ticket->update($request->mappedAttributes());
+        return TicketResource::make($ticket);
     }
 
     /**
@@ -89,11 +77,9 @@ class TicketController extends ApiController
      */
     public function destroy($ticketId)
     {
-        try {
-            Ticket::findOrFail($ticketId)->delete();
-            return $this->ok("Ticket with id $ticketId has been deleted");
-        } catch (ModelNotFoundException $e) {
-            return $this->notFound("Ticket with id $ticketId not found");
-        }
+        $ticket = Ticket::find($ticketId); 
+        $this->isAble('delete', $ticket);
+        $ticket->delete();
+        return $this->ok("Ticket with id {$ticket->id} has been deleted");
     }
 }
