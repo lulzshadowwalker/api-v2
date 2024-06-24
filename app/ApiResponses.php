@@ -33,8 +33,13 @@ trait ApiResponses
         ], $statusCode);
     }
 
-    public function unauthorized()
+    public function unauthorized($message = null)
     {
-        return $this->error('Unauthorized', Response::HTTP_UNAUTHORIZED);
+        return $this->error($message ?: 'Unauthorized', Response::HTTP_UNAUTHORIZED);
+    }
+
+    public function forbidden($message = null)
+    {
+        return $this->error($message ?: 'Forbidden', Response::HTTP_FORBIDDEN);
     }
 }
