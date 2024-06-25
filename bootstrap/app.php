@@ -1,9 +1,15 @@
 <?php
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,5 +28,70 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
-    })->create();
+        $exceptions->render(function (ValidationException $e, Request $request) {
+            foreach ($e->errors() as $key => $value)
+                foreach ($value as $message) {
+                    $errors[] = [
+                        'status' => 422,
+                        'message' => $message,
+                        'source' => $key
+                    ];
+                }
+
+            return response()->json([
+                'errors' => $errors
+            ]);
+        });
+
+        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
+            return response()->json([
+                'errors' => [
+                    'status' => 404,
+                    'message' => 'Resource not found',
+                    'source' => basename($e->getModel()::class),
+                ]
+            ], 404);
+        });
+
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            return response()->json([
+                'errors' => [
+                    'status' => 401,
+                    'message' => 'Unauthenticated',
+                    'source' => '',
+                ]
+            ], 401);
+        });
+
+        $exceptions->render(function (AccessDeniedHttpException $e, Request $request) {
+            return response()->json([
+                'errors' => [
+                    'status' => 401,
+                    'message' => 'Unauthenticated',
+                    'source' => '',
+                ]
+            ], 401);
+        });
+
+        $exceptions->render(function (AuthorizationException $e, Request $request) {
+            return response()->json([
+                'errors' => [
+                    'status' => 403,
+                    'message' => 'You are not authorized to perform this action',
+                    'source' => '',
+                ]
+            ], 403);
+        });
+
+        $exceptions->render(function (Exception $e, Request $request) {
+            return response()->json([
+                'errors' => [
+                    'type' => basename(get_class($e)),
+                    'status' => 500,
+                    'message' => $e->getMessage(),
+                    'source' => 'unknown',
+                ]
+            ], 500);
+        });
+    })
+    ->create();

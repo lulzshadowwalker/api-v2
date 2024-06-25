@@ -25,11 +25,17 @@ trait ApiResponses
         ], $statusCode);
     }
 
-    protected function error($message, $statusCode)
+    protected function error($errors = [], $statusCode = 500)
     {
+        if (is_string($errors)) {
+            return response()->json([
+                'message' => $errors,
+                'status' => $statusCode
+            ], $statusCode);
+        }
+
         return response()->json([
-            'message' => $message,
-            'status' => $statusCode
+            'errors' => $errors,
         ], $statusCode);
     }
 
