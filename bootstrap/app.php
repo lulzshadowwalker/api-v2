@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -53,6 +55,16 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 404);
         });
 
+        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
+            return response()->json([
+                'errors' => [
+                    'status' => 404,
+                    'message' => 'Resource not found',
+                    'source' => '',
+                ]
+            ], 404);
+        });
+
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             return response()->json([
                 'errors' => [
@@ -83,10 +95,20 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 403);
         });
 
+        $exceptions->render(function (MethodNotAllowedHttpException $e, Request $request) {
+            return response()->json([
+                'errors' => [
+                    'status' => 405,
+                    'message' => 'Method not allowed',
+                    'source' => $request->method() . ' ' . $request->path(),
+                ]
+            ], 405);
+        });
+
         $exceptions->render(function (Exception $e, Request $request) {
             return response()->json([
                 'errors' => [
-                    'type' => basename(get_class($e)),
+                    'type' => basename(str_replace('\\', '/', get_class($e))),
                     'status' => 500,
                     'message' => $e->getMessage(),
                     'source' => 'unknown',
