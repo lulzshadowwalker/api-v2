@@ -1,5 +1,6 @@
 <?php
 
+use App\ApiHelper;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -12,6 +13,7 @@ use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Http\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -30,90 +32,75 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        $exceptions->render(function (ValidationException $e, Request $request) {
-            foreach ($e->errors() as $key => $value)
+        $response = new ApiHelper();
+
+        $exceptions->render(function (ValidationException $e, Request $request) use ($response) {
+            foreach ($e->errors() as $key => $value) {
                 foreach ($value as $message) {
                     $errors[] = [
-                        'status' => 422,
+                        'status' => Response::HTTP_UNPROCESSABLE_ENTITY,
                         'message' => $message,
                         'source' => $key
                     ];
                 }
+            }
 
-            return response()->json([
-                'errors' => $errors
+            return $response->error($errors, Response::HTTP_UNPROCESSABLE_ENTITY);
+        });
+
+        $exceptions->render(function (ModelNotFoundException $e, Request $request) use ($response) {
+            return $response->notFound([
+                'status' => Response::HTTP_NOT_FOUND,
+                'message' => 'Resource not found',
+                'source' => basename($e->getModel()::class),
             ]);
         });
 
-        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
-            return response()->json([
-                'errors' => [
-                    'status' => 404,
-                    'message' => 'Resource not found',
-                    'source' => basename($e->getModel()::class),
-                ]
-            ], 404);
+        $exceptions->render(function (NotFoundHttpException $e, Request $request) use ($response) {
+            return $response->notFound([[
+                'status' => Response::HTTP_NOT_FOUND,
+                'message' => 'Resource not found',
+                'source' => $request->path(),
+            ]]);
         });
 
-        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
-            return response()->json([
-                'errors' => [
-                    'status' => 404,
-                    'message' => 'Resource not found',
+        $exceptions->render(function (AuthenticationException $e, Request $request) use ($response) {
+            return $response->unauthorized('Unauthenticated', Response::HTTP_UNAUTHORIZED);
+        });
+
+        $exceptions->render(function (AccessDeniedHttpException $e, Request $request) use ($response) {
+            return $response->unauthorized([
+                [
+                    'status' => Response::HTTP_FORBIDDEN,
+                    'message' => 'Forbidden',
                     'source' => '',
                 ]
-            ], 404);
+            ], Response::HTTP_FORBIDDEN);
         });
 
-        $exceptions->render(function (AuthenticationException $e, Request $request) {
-            return response()->json([
-                'errors' => [
-                    'status' => 401,
-                    'message' => 'Unauthenticated',
-                    'source' => '',
-                ]
-            ], 401);
+        $exceptions->render(function (AuthorizationException $e, Request $request) use ($response) {
+            return $response->forbidden([
+                'status' => Response::HTTP_FORBIDDEN,
+                'message' => 'You are not authorized to perform this action',
+                'source' => '',
+            ]);
         });
 
-        $exceptions->render(function (AccessDeniedHttpException $e, Request $request) {
-            return response()->json([
-                'errors' => [
-                    'status' => 401,
-                    'message' => 'Unauthenticated',
-                    'source' => '',
-                ]
-            ], 401);
+        $exceptions->render(function (MethodNotAllowedHttpException $e, Request $request) use ($response) {
+            return $response->error([
+                'status' => Response::HTTP_METHOD_NOT_ALLOWED,
+                'message' => 'Method not allowed',
+                'source' => $request->method() . ' ' . $request->path(),
+            ], Response::HTTP_METHOD_NOT_ALLOWED);
         });
 
-        $exceptions->render(function (AuthorizationException $e, Request $request) {
-            return response()->json([
-                'errors' => [
-                    'status' => 403,
-                    'message' => 'You are not authorized to perform this action',
-                    'source' => '',
-                ]
-            ], 403);
-        });
-
-        $exceptions->render(function (MethodNotAllowedHttpException $e, Request $request) {
-            return response()->json([
-                'errors' => [
-                    'status' => 405,
-                    'message' => 'Method not allowed',
-                    'source' => $request->method() . ' ' . $request->path(),
-                ]
-            ], 405);
-        });
-
-        $exceptions->render(function (Exception $e, Request $request) {
-            return response()->json([
-                'errors' => [
-                    'type' => basename(str_replace('\\', '/', get_class($e))),
-                    'status' => 500,
-                    'message' => $e->getMessage(),
-                    'source' => 'unknown',
-                ]
-            ], 500);
+        $exceptions->render(function (Exception $e, Request $request) use ($response) {
+            return $response->error([
+                'type' => basename(str_replace('\\', '/', get_class($e))),
+                'status' => Response::HTTP_INTERNAL_SERVER_ERROR,
+                'message' => $e->getMessage(),
+                'source' => 'unknown',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         });
     })
     ->create();

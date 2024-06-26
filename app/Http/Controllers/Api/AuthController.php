@@ -8,6 +8,7 @@ use App\Http\Requests\Api\LoginRequest;
 use App\Models\User;
 use App\Permissions\V1\Abilities;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
@@ -34,7 +35,7 @@ class AuthController extends Controller
         $request->validated($request->all());
 
         if (!Auth::attempt($request->only('email', 'password'))) {
-            return $this->error('Invalid credentials', 401);
+            return $this->error('Invalid credentials', Response::HTTP_UNAUTHORIZED);
         }
 
         $user = User::firstWhere('email', $request->email);

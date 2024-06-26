@@ -2,21 +2,27 @@
 
 namespace App;
 
+use App\Models\User;
 use Illuminate\Http\Response;
+
+class ApiHelper
+{
+    use ApiResponses;
+}
 
 trait ApiResponses
 {
-    protected function ok($message, $data = [])
+    public function ok($message, $data = [])
     {
         return $this->success($message, $data, Response::HTTP_OK);
     }
 
-    protected function notFound($message)
+    public function notFound($message)
     {
         return $this->error($message, Response::HTTP_NOT_FOUND);
     }
 
-    protected function success($message, $data = [], $statusCode = Response::HTTP_OK)
+    public function success($message, $data = [], $statusCode = Response::HTTP_OK)
     {
         return response()->json([
             'data' => $data,
@@ -25,7 +31,7 @@ trait ApiResponses
         ], $statusCode);
     }
 
-    protected function error($errors = [], $statusCode = 500)
+    public function error($errors = [], $statusCode = 500)
     {
         if (is_string($errors)) {
             return response()->json([
